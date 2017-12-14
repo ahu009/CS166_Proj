@@ -303,6 +303,7 @@ public class AirBooking{
 	
 	public static void BookFlight(AirBooking esql){//2
 		//Book Flight for an existing customer
+		
 	}
 	
 	public static void TakeCustomerReview(AirBooking esql){//3
@@ -315,18 +316,188 @@ public class AirBooking{
 	
 	public static void ListAvailableFlightsBetweenOriginAndDestination(AirBooking esql) throws Exception{//5
 		//List all flights between origin and distination (i.e. flightNum,origin,destination,plane,duration) 
+		String origin = "";
+		System.out.println("Please enter Origin of flights you would like to see:");
+		String input = in.readLine();
+		origin += input;
+		while (origin == "" || origin == null) {
+			System.out.println("Please enter valid Origin");
+			input = in.readLine();
+			origin += input;
+		}
+		String destination = "";
+		System.out.println("Please enter Destination of flights you would like to see:");
+		String input2 = in.readLine();
+		destination += input2;
+		while (destination == "" || destination == null) {
+			System.out.println("Please enter valid destination");
+			input2 = in.readLine();
+			destination += input2;
+		}
+		try{
+			String query1 = "SELECT * FROM flight WHERE origin = '";
+			String query2 = "' AND destination = '";
+			esql.executeQueryAndPrintResult(query1 + origin + query2 + destination + "'");
+		} catch (SQLException e){
+			System.out.println(e);
+		} 
 	}
 	
 	public static void ListMostPopularDestinations(AirBooking esql){//6
 		//Print the k most popular destinations based on the number of flights offered to them (i.e. destination, choices)
+		try {
+			String input = "";
+			String input2 = "";
+			Integer shouldRepeat = 1;
+			List<List<String>> popularDestinations;
+			List<List<String>> totalNumberOfFlights;
+			String totalFlights = "SELECT COUNT(*) FROM Flight GROUP BY destination";
+			totalNumberOfFlights = esql.executeQueryAndReturnResult(totalFlights);
+
+			System.out.println("Please enter number of top-rated destinations you want to see");
+			do { 
+				input = in.readLine();
+				shouldRepeat = 1;
+				if (Integer.parseInt(input) <= 0) {
+					System.out.println("Please enter a value greater than 0");
+					shouldRepeat = 0;
+				}
+			} while(shouldRepeat == 0);
+			String query = "SELECT destination,COUNT(*) as count FROM Flight GROUP BY destination ORDER BY count DESC LIMIT " + input + ";";
+			popularDestinations = esql.executeQueryAndReturnResult(query);
+			for (int i = 0; i < popularDestinations.size(); i++) {
+				String dest2print = popularDestinations.get(i).get(0).replaceAll("\\s+","");
+				System.out.println("Destination: " + dest2print);
+				String flight2print = popularDestinations.get(i).get(1);
+				System.out.println("Number of flights: " + flight2print);
+				System.out.println("__________________________________________________");
+			}
+		}
+		catch(Exception e){
+			 System.err.println (e.getMessage());
+		}
 	}
 	
 	public static void ListHighestRatedRoutes(AirBooking esql){//7
 		//List the k highest rated Routes (i.e. Airline Name, flightNum, Avg_Score)
+		try{
+			System.out.print("Please enter number of highest rated routes you want: ");
+			Integer shouldRepeat = 1;
+			
+			int numRoutes = in.readLine();
+			do {
+				shouldRepeat = 1;
+				if (Integer.parseInt(numRoutes) <= 0)
+				{
+					System.out.print("Please enter a number higher than 0.");
+					shouldRepeat = 0;
+				}	
+			} while (shouldRepeat == 0);
+			//Groups flight numbers and shows the average score of each.
+			String query = "";
+			String select = "SELECT Ratings.flightNum, AVG(Ratings.score) as avg, COUNT(Ratings.flightNum) as total ";
+			String from = "FROM Ratings GROUP BY Ratings.flightNum ";
+			String orderby = "ORDER BY avg DESC, total DESC LIMIT " + numRoutes;
+			query = query + select + from + orderby;
+
+			String display = "SELECT Airline.name, Flight.flightNum, Flight.origin, Flight.destination, Flight.plane, a.avg ";
+			display += "FROM Airline, Flight ";
+			display += "INNER JOIN (";
+			display += numRoutes + ") AS a ON Flight.flightNum = a.flightNum WHERE Flight.airID = Airline.airID ORDER BY a.avg DESC, a.total DESC";
+			
+
+			esql.executeQueryAndPrintResult(display);
+		}catch(Exception e)
+		{
+			System.err.println(e.getMessage());
+		}
 	}
 	
 	public static void ListFlightFromOriginToDestinationInOrderOfDuration(AirBooking esql){//8
 		//List flight to destination in order of duration (i.e. Airline name, flightNum, origin, destination, duration, plane)
+		try { 
+			String origin = ""; 
+			String dest = "";
+			boolean invalid = true; 
+			
+			// CHECKS VALID INPUT -----------------------------------
+			do { 
+				System.out.print("Enter the flight origin: "); 
+				origin = in.readLine(); 
+				if(origin == "" || origin == null) { 
+					System.out.print("\tCannot leave entry blank. Try again or enter 1 to exit. "); 
+					String exit = in.readLine(); 
+					if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
+				} 
+				else { 
+					String origin_check = "SELECT * FROM Flight WHERE origin = '" + origin + "';"; 
+					List<List<String>> origin_res = esql.executeQueryAndReturnResult(origin_check); 
+					if(origin_res.size() == 0) { 
+						System.out.print("\tInvalid origin. Try again or enter 1 to exit. "); 
+						String exit = in.readLine(); 
+						if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
+					} 
+					else { invalid = false; } 
+				}
+			} while (invalid);
+			
+			invalid = true; 
+			do { 
+				System.out.print("\tEnter the flight destination: "); 
+				dest = in.readLine(); 
+				if(dest.length() == 0) { 
+					System.out.print("\tCannot leave entry blank. Try again or enter 1 to exit. "); 
+					String exit = in.readLine(); 
+					if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
+				} 
+				else { 
+					String dest_check = "SELECT * FROM Flight WHERE destination = '" + dest + "';"; 
+					List<List<String>> dest_res = esql.executeQueryAndReturnResult(dest_check); 
+					if(dest_res.size() == 0) { 
+						System.out.print("\tInvalid destination. Try again or enter 1 to exit. "); 
+						String exit = in.readLine(); 
+						if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
+					} 
+					else { invalid = false; } 
+				} 
+			} while (invalid); 
+			// END CHECK VALID INPUT -------------------------------------------------------
+			
+			
+			System.out.print("\tEnter the number of flights you would like to see: ");
+			int k = Integer.parseInt(in.readLine()); 
+			// ADD CHECK IF INTEGER IS < 0
+			
+			String query = "SELECT A.name, F.flightNum, F.origin, F.destination, F.duration, F.plane FROM Airline A, FLight F WHERE F.airId = A.airID AND origin = '";
+			query += origin + "' AND destination = '" + dest + "' ORDER BY F.duration ASC"; 
+			
+			List<List<String>> flights = esql.executeQueryAndReturnResult(query); 
+			
+			// ADD if-else for if userInput > # flights
+			if ( k > flights.size() ) { 
+				System.out.print("Airline \t Flight Number \t Origin \t Destination \t Duration \t Plane"); 
+				System.out.println();
+				for(int i = 0; i < flights.size(); i++) { 
+					for(int j = 0; j < flights.get(i).size(); j++) { 
+						System.out.print(flights.get(i).get(j));
+						System.out.print("\t");  
+					}
+					System.out.println();
+				} 
+			}
+			else { 
+				System.out.print("Airline \t Flight Number \t Origin \t Destination \t Duration \t Plane"); 
+				System.out.println();
+				for(int i = 0; i < k; i++) { 
+					for(int j = 0; j < flights.get(i).size(); j++) { 
+						System.out.print(flights.get(i).get(j));
+					}
+					System.out.println();
+				} 
+			}
+		} catch(Exception e) { 
+			System.err.println(e.getMessage()); 
+		}
 	}
 	
 	public static void FindNumberOfAvailableSeatsForFlight(AirBooking esql){//9
