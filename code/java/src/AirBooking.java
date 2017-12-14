@@ -843,6 +843,8 @@ public class AirBooking{
 		int rows = esql.executeQueryAndPrintResult(query);
 		System.out.println ("total row(s): " + rows);
 
+	}catch(Exception e) {
+		System.err.println(e.getMessage());
 	}
 
 }
