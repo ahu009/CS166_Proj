@@ -384,16 +384,17 @@ public class AirBooking{
 			System.out.print("Please enter number of highest rated routes you want: ");
 			Integer shouldRepeat = 1;
 			
-			int numRoutes = in.readLine();
+			String numRoutes = in.readLine();
 			do {
 				shouldRepeat = 1;
 				if (Integer.parseInt(numRoutes) <= 0)
 				{
-					System.out.print("Please enter a number higher than 0.");
+					System.out.print("Please enter a number higher than 0: ");
+					numRoutes = in.readLine();
 					shouldRepeat = 0;
 				}	
 			} while (shouldRepeat == 0);
-			//Groups flight numbers and shows the average score of each.
+
 			String query = "";
 			String select = "SELECT Ratings.flightNum, AVG(Ratings.score) as avg, COUNT(Ratings.flightNum) as total ";
 			String from = "FROM Ratings GROUP BY Ratings.flightNum ";
@@ -403,8 +404,7 @@ public class AirBooking{
 			String display = "SELECT Airline.name, Flight.flightNum, Flight.origin, Flight.destination, Flight.plane, a.avg ";
 			display += "FROM Airline, Flight ";
 			display += "INNER JOIN (";
-			display += numRoutes + ") AS a ON Flight.flightNum = a.flightNum WHERE Flight.airID = Airline.airID ORDER BY a.avg DESC, a.total DESC";
-			
+			display += query + ") AS a ON Flight.flightNum = a.flightNum WHERE Flight.airID = Airline.airID ORDER BY a.avg DESC, a.total DESC";
 
 			esql.executeQueryAndPrintResult(display);
 		}catch(Exception e)
@@ -418,83 +418,74 @@ public class AirBooking{
 		try { 
 			String origin = ""; 
 			String dest = "";
-			boolean invalid = true; 
+			boolean shouldRepeat = true; 
 			
-			// CHECKS VALID INPUT -----------------------------------
 			do { 
 				System.out.print("Enter the flight origin: "); 
 				origin = in.readLine(); 
-				if(origin == "" || origin == null) { 
-					System.out.print("\tCannot leave entry blank. Try again or enter 1 to exit. "); 
-					String exit = in.readLine(); 
-					if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
-				} 
-				else { 
-					String origin_check = "SELECT * FROM Flight WHERE origin = '" + origin + "';"; 
-					List<List<String>> origin_res = esql.executeQueryAndReturnResult(origin_check); 
-					if(origin_res.size() == 0) { 
-						System.out.print("\tInvalid origin. Try again or enter 1 to exit. "); 
-						String exit = in.readLine(); 
-						if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
-					} 
-					else { invalid = false; } 
+				if(origin.replaceAll("\\s+","") == "" || origin == null) { 
+					shouldRepeat = true;
+					System.out.print("Cannot leave entry blank. Try again."); 
+					origin = in.readLine(); 
 				}
-			} while (invalid);
+				else {
+					shouldRepeat = false;
+				} 
+
+			} while (shouldRepeat);
 			
-			invalid = true; 
+			shouldRepeat = true; 
 			do { 
-				System.out.print("\tEnter the flight destination: "); 
+				System.out.print("Enter the flight destination: "); 
 				dest = in.readLine(); 
-				if(dest.length() == 0) { 
-					System.out.print("\tCannot leave entry blank. Try again or enter 1 to exit. "); 
-					String exit = in.readLine(); 
-					if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
+				if(dest.replaceAll("\\s+","") == "" || dest.replaceAll("\\s+","") == null) { 
+					System.out.print("Cannot leave entry blank. Try again."); 
+					shouldRepeat = true;
+					dest = in.readLine(); 
 				} 
 				else { 
-					String dest_check = "SELECT * FROM Flight WHERE destination = '" + dest + "';"; 
-					List<List<String>> dest_res = esql.executeQueryAndReturnResult(dest_check); 
-					if(dest_res.size() == 0) { 
-						System.out.print("\tInvalid destination. Try again or enter 1 to exit. "); 
-						String exit = in.readLine(); 
-						if(exit.length() > 0 && Integer.parseInt(exit) == 0) { return; } 
-					} 
-					else { invalid = false; } 
+					shouldRepeat = false; 
 				} 
-			} while (invalid); 
-			// END CHECK VALID INPUT -------------------------------------------------------
-			
-			
-			System.out.print("\tEnter the number of flights you would like to see: ");
-			int k = Integer.parseInt(in.readLine()); 
-			// ADD CHECK IF INTEGER IS < 0
+			} while (shouldRepeat); 
 			
 			String query = "SELECT A.name, F.flightNum, F.origin, F.destination, F.duration, F.plane FROM Airline A, FLight F WHERE F.airId = A.airID AND origin = '";
 			query += origin + "' AND destination = '" + dest + "' ORDER BY F.duration ASC"; 
 			
-			List<List<String>> flights = esql.executeQueryAndReturnResult(query); 
-			
-			// ADD if-else for if userInput > # flights
-			if ( k > flights.size() ) { 
-				System.out.print("Airline \t Flight Number \t Origin \t Destination \t Duration \t Plane"); 
-				System.out.println();
-				for(int i = 0; i < flights.size(); i++) { 
-					for(int j = 0; j < flights.get(i).size(); j++) { 
-						System.out.print(flights.get(i).get(j));
-						System.out.print("\t");  
-					}
-					System.out.println();
+			shouldRepeat = true;
+			String numFlights = "";
+			do {
+				System.out.print("Enter the number of flights you would like to see: ");
+				numFlights = in.readLine();
+				if(Integer.parseInt(numFlights) <= 0 || numFlights.replaceAll("\\s+","") == "") {
+					System.out.print("Enter a value greater than 0");
+					shouldRepeat = true;
+					numFlights = in.readLine();
+				}
+				else {
+					shouldRepeat = false;
 				} 
+			} while (shouldRepeat);
+			
+			List<List<String>> flightsResult = esql.executeQueryAndReturnResult(query); 
+			
+			
+			if(flightsResult.size() == 0) {
+					System.out.print("There are no such flights\n");
 			}
 			else { 
-				System.out.print("Airline \t Flight Number \t Origin \t Destination \t Duration \t Plane"); 
-				System.out.println();
-				for(int i = 0; i < k; i++) { 
-					for(int j = 0; j < flights.get(i).size(); j++) { 
-						System.out.print(flights.get(i).get(j));
+			System.out.print("Airline \t Flight Number \t Origin \t Destination \t Duration \t Plane \n"); 
+				for(int i = 0; i < Integer.parseInt(numFlights); i++) { 
+					for(int j = 0; j < flightsResult.get(i).size(); j++) { 
+						System.out.print(flightsResult.get(i).get(j));
+						System.out.print("\t");
 					}
-					System.out.println();
-				} 
-			}
+					System.out.print("\n");
+					if (i + 1 >= flightsResult.size()) {
+						break;
+					}
+				}
+		} 
+
 		} catch(Exception e) { 
 			System.err.println(e.getMessage()); 
 		}

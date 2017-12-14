@@ -10,7 +10,7 @@ export PGDATA=$PGFOLDER/myDB/data
 export PGPORT=$1
 
 #DBNAME
-export DBNAME=flightDB
+export DBNAME=myDB
 
 dropdb -h 127.0.0.1 -p $PGPORT $DBNAME
 createdb -h 127.0.0.1 -p $PGPORT $DBNAME

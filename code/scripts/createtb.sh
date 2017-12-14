@@ -10,7 +10,7 @@ export PGDATA=$PGFOLDER/myDB/data
 export PGPORT=$1
 
 #DBNAME
-export DBNAME=flightDB
+export DBNAME=myDB
 
 create_sh=../sql/create.sql
 psql -h 127.0.0.1 -p $PGPORT $DBNAME < $create_sh
