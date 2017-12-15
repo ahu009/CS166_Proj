@@ -98,9 +98,25 @@ public class AirBooking{
 		//iterates through the result set and output them to standard out.
 		boolean outputHeader = true;
 		while (rs.next()){
+			String space = "";
 			if(outputHeader){
 				for(int i = 1; i <= numCol; i++){
-					System.out.print(rsmd.getColumnName(i) + "\t");
+					if (i == 3) {
+						space = "               ";
+					}
+					else if (i == 4){
+						space = "          ";
+					}
+					else if (i == 5) {
+						space = "               ";
+					}
+					else if (i == 6) {
+						space = "";
+					}
+					else {
+						space = "";
+					}
+					System.out.print(rsmd.getColumnName(i) + "\t" + space);
 			    }
 			    System.out.println();
 			    outputHeader = false;
@@ -304,14 +320,11 @@ public class AirBooking{
          String query =  "INSERT INTO Passenger(pID,passNum,fullName,"
 						+" bdate,country) VALUES (";
 
-		// To get the latest pid
 		String getpID = "SELECT MAX(pID) FROM Passenger";
 		List<List<String>> pidGot = esql.executeQueryAndReturnResult(getpID);
 		int pid = Integer.valueOf(pidGot.get(0).get(0));
-		//add 1
 		pid = pid + 1;
 		String pidGotten = Integer.toString(pid);
-		// done
          int verify = 1;
          String input = "";
          query += pidGotten;
@@ -463,14 +476,13 @@ public class AirBooking{
 				  +" GROUP BY F.flightNum, F.origin, F.destination, B1.departure";
 
 
-			//execute query to print all available flights
 
-				int check = esql.executeQueryAndPrintResult(query);
-				if(check > 0) {
-					System.out.print("\nAvailable flights: \n");
-							System.out.print("\nSelect the flight \n");
+				List<List<String>> check = esql.executeQueryAndReturnResult(query);
+				if(check.size() > 0) {
+					System.out.print("\nList of Available flights: \n");
+					esql.executeQueryAndPrintResult(query);
+							System.out.print("\nSelect a flight \n");
 
-							//check for proper flight number input
 							String flightNum = "";
 							verify = 1;
 							 while(verify == 1){
@@ -483,7 +495,6 @@ public class AirBooking{
 							}
 							System.out.print("\n");
 
-							//generate random alphanumeric string
 							String bookref="";
 							verify = 1;
 							while(verify == 1){
@@ -517,6 +528,7 @@ public class AirBooking{
 
 	public static void TakeCustomerReview(AirBooking esql){//3
 		//Insert customer review into the ratings table
+
 		try{
          String query =  "INSERT INTO Ratings(rID, pID, flightNum, score,comment) VALUES (";
 
@@ -533,7 +545,6 @@ public class AirBooking{
 
          int verify = 1;
          String verifytook = query;
-         //Gets input for pID and flightNum, checks if passenger took flight or wrote a rating already.
          while(verify == 1) {
 			 String verifyExist = "SELECT passNum FROM Passenger WHERE pID = ";
 			 String temp = verifyExist;
@@ -543,7 +554,6 @@ public class AirBooking{
 				 input = in.readLine();
 				 verifyExist += input;
 				 List<List<String>> verifyIDE = esql.executeQueryAndReturnResult(verifyExist);
-				 //Checks if pID exists
 				 if(verifyIDE.size() != 0){
 					 verify = 0;
 				}
@@ -564,7 +574,6 @@ public class AirBooking{
 				 input = in.readLine();
 				 verifyflightNumExist += input;
 				 verifyflightNumExist += "'";
-				 //Checks if flight num exist
 				 List<List<String>> flightExist = esql.executeQueryAndReturnResult(verifyflightNumExist);
 				 if(flightExist.size() != 0) {
 					 verify = 0;
@@ -582,13 +591,13 @@ public class AirBooking{
 
 			 List<List<String>> verifyIfExist = esql.executeQueryAndReturnResult(checkTook);
 			 List<List<String>> verifyIfWrote = esql.executeQueryAndReturnResult(checkWrote);
-			 //Checks to see if the passenger didnt write a rating, and took the flight
 			 if(verifyIfExist.size() != 0 && verifyIfWrote.size() == 0) {
 				 verify = 0;
 			 }
 			 else if ( verifyIfWrote.size() != 0 ) {
 				 System.out.print("Error the passenger wrote a rating for this flight, please enter info again\n");
 				 query = verifytook;
+
 				 verify = 1;
 				}
 			 else {
@@ -627,7 +636,56 @@ public class AirBooking{
 
 	public static void InsertOrUpdateRouteForAirline(AirBooking esql){//4
 		//Insert a new route for the airline
+				try{
+				String query = "SELECT airId, name FROM Airline;";
+				esql.executeQueryAndPrintResult(query);
+				System.out.print("Please select airId: " );
+				String airId = in.readLine();
+
+				String query0 = "SELECT * FROM Airline WHERE airId = '"; 
+				query0 += airId + "';"; 
+				List<List<String>> check = esql.executeQueryAndReturnResult(query0);
+				while(check.size() <= 0)
+				{
+					System.out.print("Enter a valid airId: " );
+					airId = in.readLine();
+					if(Integer.parseInt(airId) == -1)
+					{
+						return;
+					}
+					query0 = "SELECT * FROM Airline WHERE airId = '"; 
+					query0 += airId + "';"; 
+					check = esql.executeQueryAndReturnResult(query0);
+				}
+			
+				System.out.print("Enter origin: ");
+				String origin = in.readLine();
+				
+				System.out.print("Enter destination: ");
+				String destination = in.readLine();
+				
+				System.out.print("Enter plane: ");
+				String plane = in.readLine();
+
+				System.out.print("Enter number of seats: ");
+				String seats = in.readLine();
+			    
+				System.out.print("Enter flight duration: ");
+				String duration = in.readLine();
+				
+				System.out.print("Enter flight number: ");
+				String flightNum = in.readLine();
+				
+				String queryLast = "INSERT INTO Flight (airId, flightNum, origin, destination, plane, seats, duration) VALUES (";
+				queryLast += "'" + airId + "', '" + flightNum + "', '" + origin + "', '" + destination + "', '" + plane +"', '" + seats +"', '" + duration +"');"; 
+				System.out.println("Flight Created"); 
+                esql.executeUpdate(queryLast);
+			
+		  }catch(Exception e){
+			 System.err.println (e.getMessage());
+		  }
 	}
+
 
 	public static void ListAvailableFlightsBetweenOriginAndDestination(AirBooking esql) throws Exception{//5
 		//List all flights between origin and distination (i.e. flightNum,origin,destination,plane,duration)
@@ -788,7 +846,7 @@ public class AirBooking{
 					System.out.print("There are no such flights\n");
 			}
 			else {
-			System.out.print("Airline \t Flight Number \t Origin \t Destination \t Duration \t Plane \n");
+			System.out.print("Airline                        Flight Number    Origin                 Destination            Duration    Plane \n");
 				for(int i = 0; i < Integer.parseInt(numFlights); i++) {
 					for(int j = 0; j < flightsResult.get(i).size(); j++) {
 						System.out.print(flightsResult.get(i).get(j));
@@ -815,6 +873,7 @@ public class AirBooking{
 						+ " (F.seats - (SELECT Count(B.flightNum)FROM Booking B"
 						+ " WHERE B.flightNum = F.flightNum)) as available FROM Flight F, Booking B1"
 						+ " WHERE B1.departure = '";
+
 
 		String input = "";
 		int shouldRepeat = 1;
