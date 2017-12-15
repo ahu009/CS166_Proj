@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * This class defines a simple embedded SQL utility class that is designed to
@@ -312,7 +313,7 @@ public class AirBooking{
 		String pidGotten = Integer.toString(pid);
 		// done
          int verify = 1;
-         String input = "temp";
+         String input = "";
          query += pidGotten;
 
          String checkPN = "SELECT pID FROM Passenger WHERE passNum = '";
@@ -385,7 +386,6 @@ public class AirBooking{
 
 		String passnum = "0";
          verify = 1;
-         // ask user for passport number, will loop until valid
          while(verify == 1){
 			 System.out.print("Enter passport number: ");
 			 passnum = in.readLine();
@@ -401,7 +401,6 @@ public class AirBooking{
 		String validP = "SELECT P.pID FROM Passenger P WHERE P.passNum = '" + passnum +"'";
 		List<List<String>> validPID = esql.executeQueryAndReturnResult(validP);
 		String pid = validPID.get(0).get(0);
-		// This will hold the value of the passenger's pID
 
 			 String origin = "";
 			 verify = 1;
@@ -420,7 +419,6 @@ public class AirBooking{
 					}
 				 }
 			}
-			// ask user for destination, loops to ensure valid
 			String dest = "";
 			verify = 1;
 			while(verify == 1){
@@ -438,7 +436,6 @@ public class AirBooking{
 					}
 				 }
 			}
-			//ask user for their departure date
 			verify = 1;
 			String date = "date";
 			while(verify == 1) {
@@ -455,7 +452,6 @@ public class AirBooking{
 					System.out.println("Error invalid date, please re enter date");
 				}
 			}
-			System.out.print("\nAvailable flights: \n");
 
 
 			String query = "SELECT F.flightNum, F.origin, F.destination,B1.departure, "
@@ -469,46 +465,50 @@ public class AirBooking{
 
 			//execute query to print all available flights
 
-				esql.executeQueryAndPrintResult(query);
+				int check = esql.executeQueryAndPrintResult(query);
+				if(check > 0) {
+					System.out.print("\nAvailable flights: \n");
+							System.out.print("\nSelect the flight \n");
 
-				System.out.print("\n Select the flight \n");
+							//check for proper flight number input
+							String flightNum = "";
+							verify = 1;
+							 while(verify == 1){
+								 System.out.print("Enter flightNum: ");
+								 flightNum = in.readLine();
 
-				//check for proper flight number input
-				String flightNum = "";
-				verify = 1;
-				 while(verify == 1){
-					 System.out.print("Enter flightNum: ");
-					 flightNum = in.readLine();
+								if(flightNum.length() <= 8){
+								verify = 0;
+								}
+							}
+							System.out.print("\n");
 
-					if(flightNum.length() <= 8){
-					verify = 0;
-					}
+							//generate random alphanumeric string
+							String bookref="";
+							verify = 1;
+							while(verify == 1){
+								String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+								StringBuilder ref = new StringBuilder();
+								Random rnd = new Random();
+								while (ref.length() < 10) { // length of the random string.
+									int index = (int) (rnd.nextFloat() * CHARS.length());
+									ref.append(CHARS.charAt(index));
+								}
+								bookref = ref.toString();
+
+								String test = "SELECT B.bookRef FROM Booking B WHERE B.bookRef = '"+ bookref +"'";
+								 List<List<String>> val_book = esql.executeQueryAndReturnResult(test);
+								 if(val_book.size() == 0){
+									 verify = 0;
+								 }
+							}
+					String insert =  "INSERT INTO Booking(bookRef,departure,flightNum,pID)"
+									+" VALUES ('"+ bookref +"', '"+ date +"', '"+ flightNum +"', '"+ pid +"')";
+
+					esql.executeUpdate(insert);
+				} else {
+					System.out.println("There are no available flights");
 				}
-				System.out.print("\n");
-
-				//generate random alphanumeric string
-				String bookref="";
-				verify = 1;
-				while(verify == 1){
-					String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-					StringBuilder ref = new StringBuilder();
-					Random rnd = new Random();
-					while (ref.length() < 10) { // length of the random string.
-						int index = (int) (rnd.nextFloat() * CHARS.length());
-						ref.append(CHARS.charAt(index));
-					}
-					bookref = ref.toString();
-
-					String test = "SELECT B.bookRef FROM Booking B WHERE B.bookRef = '"+ bookref +"'";
-					 List<List<String>> val_book = esql.executeQueryAndReturnResult(test);
-					 if(val_book.size() == 0){
-						 verify = 0;
-					 }
-				}
-		String insert =  "INSERT INTO Booking(bookRef,departure,flightNum,pID)"
-						+" VALUES ('"+ bookref +"', '"+ date +"', '"+ flightNum +"', '"+ pid +"')";
-
-		esql.executeUpdate(insert);
 	}catch(Exception e){
          System.err.println (e.getMessage());
 	 }
@@ -635,7 +635,7 @@ public class AirBooking{
 		System.out.print("Please enter Origin of flights you would like to see: ");
 		String input = in.readLine();
 		origin += input;
-		while (origin == "" || origin == null) {
+		while (origin.length() <= 0 || origin == null) {
 			System.out.print("Please enter valid Origin: ");
 			input = in.readLine();
 			origin += input;
@@ -644,7 +644,7 @@ public class AirBooking{
 		System.out.print("Please enter Destination of flights you would like to see: ");
 		String input2 = in.readLine();
 		destination += input2;
-		while (destination == "" || destination == null) {
+		while (destination.length() <= 0 || destination == null) {
 			System.out.print("Please enter valid destination: ");
 			input2 = in.readLine();
 			destination += input2;
@@ -652,7 +652,10 @@ public class AirBooking{
 		try{
 			String query1 = "SELECT * FROM flight WHERE origin = '";
 			String query2 = "' AND destination = '";
-			esql.executeQueryAndPrintResult(query1 + origin + query2 + destination + "'");
+			int checkSize = esql.executeQueryAndPrintResult(query1 + origin + query2 + destination + "'");
+			if(checkSize <= 0) {
+				System.out.println("There are no such flights");
+			}
 		} catch (SQLException e){
 			System.out.println(e);
 		}
@@ -662,7 +665,6 @@ public class AirBooking{
 		//Print the k most popular destinations based on the number of flights offered to them (i.e. destination, choices)
 		try {
 			String input = "";
-			String input2 = "";
 			Integer shouldRepeat = 1;
 			List<List<String>> popularDestinations;
 			List<List<String>> totalNumberOfFlights;
@@ -673,20 +675,22 @@ public class AirBooking{
 			do {
 				input = in.readLine();
 				shouldRepeat = 1;
-				if (Integer.parseInt(input) <= 0) {
+				if (input.replaceAll("\\s+","").length() <= 0 || Integer.parseInt(input) <= 0 || input == null) {
 					System.out.print("Please enter a value greater than 0: ");
 					shouldRepeat = 0;
 				}
 			} while(shouldRepeat == 0);
 			String query = "SELECT destination,COUNT(*) as count FROM Flight GROUP BY destination ORDER BY count DESC LIMIT " + input + ";";
 			popularDestinations = esql.executeQueryAndReturnResult(query);
+			System.out.print("__________________________________________________\n");
 			for (int i = 0; i < popularDestinations.size(); i++) {
 				String dest2print = popularDestinations.get(i).get(0).replaceAll("\\s+","");
-				System.out.println("Destination: " + dest2print);
+				System.out.println("\nDestination: " + dest2print);
 				String flight2print = popularDestinations.get(i).get(1);
 				System.out.println("Number of flights: " + flight2print);
 				System.out.println("__________________________________________________");
 			}
+			System.out.println();
 		}
 		catch(Exception e){
 			 System.err.println (e.getMessage());
@@ -702,7 +706,7 @@ public class AirBooking{
 			String numRoutes = in.readLine();
 			do {
 				shouldRepeat = 1;
-				if (Integer.parseInt(numRoutes) <= 0)
+				if (numRoutes.replaceAll("\\s+","").length() <= 0 || Integer.parseInt(numRoutes) <= 0)
 				{
 					System.out.print("Please enter a number higher than 0: ");
 					numRoutes = in.readLine();
@@ -734,14 +738,12 @@ public class AirBooking{
 			String origin = "";
 			String dest = "";
 			boolean shouldRepeat = true;
-
+			System.out.print("Enter the flight origin: ");
 			do {
-				System.out.print("Enter the flight origin: ");
 				origin = in.readLine();
-				if(origin.replaceAll("\\s+","") == "" || origin == null) {
+				if(origin.replaceAll("\\s+","").length() <= 0 || origin == null) {
 					shouldRepeat = true;
 					System.out.print("Cannot leave entry blank. Try again: ");
-					origin = in.readLine();
 				}
 				else {
 					shouldRepeat = false;
@@ -750,13 +752,12 @@ public class AirBooking{
 			} while (shouldRepeat);
 
 			shouldRepeat = true;
+			System.out.print("Enter the flight destination: ");
 			do {
-				System.out.print("Enter the flight destination: ");
 				dest = in.readLine();
-				if(dest.replaceAll("\\s+","") == "" || dest.replaceAll("\\s+","") == null) {
+				if(dest.replaceAll("\\s+","").length() <= 0 || dest.replaceAll("\\s+","") == null) {
 					System.out.print("Cannot leave entry blank. Try again: ");
 					shouldRepeat = true;
-					dest = in.readLine();
 				}
 				else {
 					shouldRepeat = false;
@@ -768,13 +769,12 @@ public class AirBooking{
 
 			shouldRepeat = true;
 			String numFlights = "";
+			System.out.print("Enter the number of flights you would like to see: ");
 			do {
-				System.out.print("Enter the number of flights you would like to see: ");
 				numFlights = in.readLine();
-				if(Integer.parseInt(numFlights) <= 0 || numFlights.replaceAll("\\s+","") == "") {
+				if(numFlights.replaceAll("\\s+","").length() <= 0 || Integer.parseInt(numFlights) <= 0) {
 					System.out.print("Enter a value greater than 0: ");
 					shouldRepeat = true;
-					numFlights = in.readLine();
 				}
 				else {
 					shouldRepeat = false;
@@ -800,7 +800,7 @@ public class AirBooking{
 					}
 				}
 		}
-
+		System.out.println();
 		} catch(Exception e) {
 			System.err.println(e.getMessage());
 		}
@@ -819,15 +819,22 @@ public class AirBooking{
 		String input = "";
 		int shouldRepeat = 1;
 		while (shouldRepeat == 1) {
-			System.out.print("Please enter the departure date for flights: ");
+			System.out.print("Please enter the departure date for flights (or 'Exit' to exit): ");
 			input = in.readLine();
+			
+			while (input.length() < 10 && !input.contains("Exit")) {
+					System.out.print(input);
+					System.out.print("Please Enter Valid Date: ");
+					input = in.readLine();
+			}
+			if (input.contains("Exit")) {
+					System.out.println();
+					return;
+				}
 			String dates = "SELECT * FROM Booking WHERE departure = '" + input + "'";
 			List<List<String>> flights = esql.executeQueryAndReturnResult(dates);
-				if (input == "Exit") {
-					shouldRepeat = 0;
-				}
 				 if(flights.size() == 0){
-					 System.out.print("There are no available flights for this departure date. Try Again or 'Exit' to exit: ");
+					 System.out.print("There are no available flights for this departure date. ");
 				 }
 				 else {
 					 shouldRepeat = 0;
@@ -843,8 +850,9 @@ public class AirBooking{
 		int rows = esql.executeQueryAndPrintResult(query);
 		System.out.println ("total row(s): " + rows);
 
-	}catch(Exception e) {
-		System.err.println(e.getMessage());
+		}catch(Exception e) {
+			System.err.println(e.getMessage());
+		}
 	}
 
 }
